@@ -1,0 +1,9 @@
+{
+  "name": "Smartphone Samsung Galaxy S24",
+  "description": "Smartphone haut de gamme avec écran AMOLED 6.8 pouces, 256GB de stockage, caméra 108MP et charge rapide 45W",
+  "price": 899.99,
+  "quantityInStock": 25,
+  "category": "Electronics",
+  "sku": "SAM-S24-256GB",
+  "active": true
+}
