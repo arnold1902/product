@@ -39,7 +39,7 @@ public class ProductService {
     /**
      * Récupère tous les produits avec pagination
      */
-    @Cacheable("products")
+    @Cacheable(value = "products-page", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<ProductResponseDto> getAllProducts(Pageable pageable) {
         log.debug("Récupération de tous les produits avec pagination: {}", pageable);
         Page<Product> productPage = productRepository.findAll(pageable);
@@ -63,6 +63,7 @@ public class ProductService {
     /**
      * Récupère un produit par son ID
      */
+    @Cacheable(value = "product", key = "#id")
     public ProductResponseDto getProductById(Long id) {
         log.debug("Récupération du produit avec l'ID: {}", id);
         Product product = productRepository.findById(id)
@@ -102,6 +103,8 @@ public class ProductService {
     /**
      * Met à jour un produit existant
      */
+    @CacheEvict(value = "products-page", allEntries = true)
+    @CachePut(value = "product", key = "#id")
     @Transactional
     public ProductResponseDto updateProduct(Long id, UpdateProductDto updateProductDto) {
         log.debug("Mise à jour du produit avec l'ID: {}", id);
@@ -124,7 +127,7 @@ public class ProductService {
     /**
      * Supprime un produit (suppression logique)
      */
-    @CacheEvict(value = "products", key = "#id")
+    @CacheEvict(cacheNames = {"products-page", "product"}, allEntries = true)
     @Transactional
     public void deleteProduct(Long id) {
         log.debug("Suppression du produit avec l'ID: {}", id);
