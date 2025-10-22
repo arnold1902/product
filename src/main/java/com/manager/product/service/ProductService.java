@@ -1,5 +1,6 @@
 package com.manager.product.service;
 
+import com.manager.product.config.KafkaTopics;
 import com.manager.product.dto.CreateProductDto;
 import com.manager.product.dto.ProductResponseDto;
 import com.manager.product.dto.UpdateProductDto;
@@ -34,6 +35,7 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final KafkaProductEventEmitter kafkaProductEventEmitter;
     private final String NOT_FOUND_MESSAGE = "Produit non trouvé avec l'ID: ";
 
     /**
@@ -97,7 +99,9 @@ public class ProductService {
         Product product = productMapper.toEntity(createProductDto);
         Product savedProduct = productRepository.save(product);
         log.info("Produit créé avec succès avec l'ID: {}", savedProduct.getId());
-        return productMapper.toResponseDto(savedProduct);
+        ProductResponseDto productResponseDto = productMapper.toResponseDto(savedProduct);
+        kafkaProductEventEmitter.sendMessage(KafkaTopics.PRODUCT_CREATED.getTopicName(), "product-"+ productResponseDto.getId(), productResponseDto);
+        return productResponseDto;
     }
 
     /**
@@ -121,7 +125,9 @@ public class ProductService {
         productMapper.updateEntityFromDto(updateProductDto, existingProduct);
         Product updatedProduct = productRepository.save(existingProduct);
         log.info("Produit mis à jour avec succès avec l'ID: {}", updatedProduct.getId());
-        return productMapper.toResponseDto(updatedProduct);
+        ProductResponseDto productResponseDto = productMapper.toResponseDto(updatedProduct);
+        kafkaProductEventEmitter.sendMessage(KafkaTopics.PRODUCT_UPDATED.getTopicName(), "product-"+ productResponseDto.getId(), productResponseDto);
+        return productResponseDto;
     }
 
     /**
@@ -136,7 +142,8 @@ public class ProductService {
                 .orElseThrow(() -> new ProductNotFoundException(NOT_FOUND_MESSAGE + id));
         
         product.setActive(false);
-        productRepository.save(product);
+        ProductResponseDto productResponseDto = productMapper.toResponseDto(productRepository.save(product));
+        kafkaProductEventEmitter.sendMessage(KafkaTopics.PRODUCT_DELETED.getTopicName(), "product-"+ productResponseDto.getId(), productResponseDto);
         log.info("Produit supprimé (logiquement) avec succès avec l'ID: {}", id);
     }
 
